@@ -2,9 +2,26 @@ context("Test Symbol")
 
 test_that("Document Symbol works", {
     skip_on_cran()
-    client <- language_client()
+
 
     defn_file <- withr::local_tempfile(fileext = ".R")
+
+    
+    defn_file_path <- "~/code/r/blogdown_test/content/post/test.R"
+    defn_file <- readr::read_lines(defn_file_path)
+
+    Sys.setenv(R_LANGSVR_LOG = "~/repos/languageserver/logs/log.txt")
+    client <- language_client()
+
+    client %>% did_save(defn_file_path)
+    result <- client %>% respond_document_symbol(defn_file_path)
+
+    env <- languageserver:::parse_document("file:///home/miles/code/r/blogdown_test/content/post/test.R", 
+    readLines("file:///home/miles/code/r/blogdown_test/content/post/test.R"))
+
+    ls.str(env)
+
+    defn_file_path2 <- "~/code/r/blogdown_test/content/post/test2.R"
     writeLines(c(
         "f <- function(x) {",
         "  x + 1",
@@ -14,10 +31,12 @@ test_that("Document Symbol works", {
         "m <- list(",
         "  x = p + 1",
         ")"
-    ), defn_file)
+    ), defn_file_path2)
+    client <- TCPLanguageClient$new(port = 8888)
+    client$start()
+    client %>% did_save(defn_file_path2)
+    result <- client %>% respond_document_symbol(defn_file_path2)
 
-    client %>% did_save(defn_file)
-    result <- client %>% respond_document_symbol(defn_file)
 
     expect_setequal(result %>% map_chr(~ .$name), c("f", "g", "p", "m"))
     expect_equivalent(

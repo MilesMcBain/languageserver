@@ -45,7 +45,7 @@ LanguageServer <- R6::R6Class("LanguageServer",
             } else {
                 self$tcp <- TRUE
                 logger$info("connection type: tcp at ", port)
-                inputcon <- socketconnection(host = host, port = port, open = "r+b", server = TRUE)
+                inputcon <- socketConnection(host = host, port = port, open = "r+b", server = TRUE)
                 logger$info("connected")
                 outputcon <- inputcon
             }

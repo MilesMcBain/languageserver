@@ -11,9 +11,10 @@ TCPLanguageClient <- R6::R6Class("TCPLanguageClient",
         diagnostics = NULL,
 
         initialize = function(host = "localhost", port = NULL) {
-            if (!is.null(port)) stop("port required to connect over TCP")
-            self$connection <- socketconnection(host = host, port = port, open = "r+b")
+            if (is.null(port)) stop("port required to connect over TCP")
+            self$connection <- socketConnection(host = host, port = port, open = "r+b")
             message("TCP client connected to ", paste0(host,":","port"))
+            super$initialize()
         },
 
         finalize = function() {
@@ -25,39 +26,31 @@ TCPLanguageClient <- R6::R6Class("TCPLanguageClient",
         },
 
         check_connection = function() {
-            if (!is.null(self$connection) && !self$process$is_alive())
+            if (!is.null(self$connection) && !isOpen(self$connection))
                 stop("Server is dead.")
         },
 
         write_text = function(text) {
             self$check_connection()
-            self$process$write_input(text)
+            writeLines(text, self$connection)
         },
 
-        read_output_lines = function() {
+        read_output_lines = function(timeout = 5) {
             self$check_connection()
-            if (self$process$is_alive() && self$process$poll_io(1)[1] != "ready") return(NULL)
-            self$process$read_output_lines(1)
+            if (socketSelect(list(self$connection), timeout = timeout)) {
+                    readLines(self$connection, encoding = "UTF-8")
+                } else {
+                    character(0)
+                }
         },
 
         read_line = function() {
             self$check_connection()
-            buf <- private$read_char_buf
-            if (length(buf) > 0 && as.raw(10) %in% buf) {
-                first_match <- min(which(buf == charToRaw("\n")))
-                line <- buf[seq_len(first_match - 1)]
-                if (length(line) > 0 && line[length(line)] == charToRaw("\r")) {
-                    line <- line[-length(line)]
+            if (socketSelect(list(self$connection), timeout = 0)) {
+                    readLines(self$connection, n = 1, encoding = "UTF-8")
+                } else {
+                    character(0)
                 }
-                private$read_char_buf <- buf[seq_safe(first_match + 1, length(buf))]
-                return(rawToChar(line))
-            }
-            line <- self$read_output_lines()
-            if (length(line) > 0) {
-                line <- paste0(rawToChar(buf), line)
-                private$read_char_buf <- raw(0)
-                trimws(line, "right")
-            }
         },
 
         read_output = function(n) {
@@ -66,18 +59,9 @@ TCPLanguageClient <- R6::R6Class("TCPLanguageClient",
 
         read_char = function(n) {
             self$check_connection()
-            if (length(private$read_char_buf) < n) {
-                data <- c(private$read_char_buf, charToRaw(self$read_output(n - length(private$read_char_buf))))
-            } else {
-                data <- private$read_char_buf
-            }
-            if (length(data) > n) {
-                private$read_char_buf <- data[seq_safe(n + 1, length(data))]
-                rawToChar(data[seq_len(n)])
-            } else {
-                private$read_char_buf <- raw(0)
-                rawToChar(data)
-            }
+            out <- readChar(self$connection, n, useBytes = TRUE)
+            Encoding(out) <- "UTF-8"
+            out
         },
 
         read_error = function() {
@@ -113,7 +97,7 @@ TCPLanguageClient <- R6::R6Class("TCPLanguageClient",
 )
 
 
-LanguageClient$set("public", "register_handlers", function() {
+TCPLanguageClient$set("public", "register_handlers", function() {
     self$request_handlers <- list()
     self$notification_handlers <- list()
 })
