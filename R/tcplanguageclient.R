@@ -53,20 +53,11 @@ TCPLanguageClient <- R6::R6Class("TCPLanguageClient",
                 }
         },
 
-        read_output = function(n) {
-            self$process$read_output(n)
-        },
-
         read_char = function(n) {
             self$check_connection()
             out <- readChar(self$connection, n, useBytes = TRUE)
             Encoding(out) <- "UTF-8"
             out
-        },
-
-        read_error = function() {
-            self$check_connection()
-            paste0(self$process$read_error_lines(), collapse = "\n")
         },
 
         welcome = function() {
