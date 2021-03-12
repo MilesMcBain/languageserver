@@ -12,7 +12,7 @@ TCPLanguageClient <- R6::R6Class("TCPLanguageClient",
 
         initialize = function(host = "localhost", port = NULL) {
             if (is.null(port)) stop("port required to connect over TCP")
-            self$connection <- socketConnection(host = host, port = port, open = "r+b")
+            self$connection <- socketConnection(host = host, port = port, open = "r+b", server = TRUE)
             message("TCP client connected to ", paste0(host,":","port"))
             super$initialize()
         },
