@@ -244,19 +244,15 @@ Workspace <- R6::R6Class("Workspace",
             self$documents$get(uri)$update_parse_data(parse_data)
         },
 
-        load_all = function(langserver) {
-            source_dir <- file.path(self$root, "R")
-            files <- list.files(source_dir, pattern = "\\.r$", ignore.case = TRUE)
-            for (f in files) {
-                logger$info("load ", f)
-                path <- file.path(source_dir, f)
+        load_sources = function(langserver, source_files) {
+            for (path in source_files) {
+                logger$info("load ", path)
                 uri <- path_to_uri(path)
                 doc <- Document$new(uri, NULL, stringi::stri_read_lines(path))
                 self$documents$set(uri, doc)
                 # TODO: move text_sync to Workspace!?
                 langserver$text_sync(uri, document = doc, parse = TRUE)
             }
-            self$import_from_namespace_file()
         },
 
         import_from_namespace_file = function() {

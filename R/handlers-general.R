@@ -34,9 +34,11 @@ on_initialize <- function(self, id, params) {
 on_initialized <- function(self, params) {
     logger$info("on_initialized")
     project_root <- self$rootPath
-    if (length(project_root) && is_package(project_root)) {
+    if (length(project_root)) {
+        source_files <- project_source_files(project_root)
         # a bit like devtools::load_all()
-        self$workspace$load_all(self)
+        self$workspace$load_sources(self, source_files)
+        if (is_package(project_root)) self$workspace$import_from_namespace_file()
         # TODO: result lint result of the package
         # lint_result <- lintr::lint_package(rootPath)
     }

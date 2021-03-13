@@ -98,8 +98,10 @@ text_document_did_close <- function(self, params) {
         diagnostics_callback(self, uri, NULL, list())
     }
 
-    # do not remove document in package
-    if (!(is_package(self$rootPath) && is_from_workspace)) {
+    # do not remove document in package or if it is a configured project source file
+    if (!(is_package(self$rootPath) &&
+        is_from_workspace &&
+        !is_project_source_file(self$rootPath, path))) {
         diagnostics_callback(self, uri, NULL, list())
         self$workspace$documents$remove(uri)
         self$workspace$update_loaded_packages()

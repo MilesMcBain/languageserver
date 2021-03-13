@@ -459,6 +459,32 @@ is_package <- function(rootPath) {
     file.exists(file) && !dir.exists(file)
 }
 
+project_source_files <- function(rootPath) {
+    source_file_globs <-
+        file.path(
+            rootPath,
+            c(
+                if (is_package(rootPath)) "R/*.[Rr]" else NULL,
+                getOption("languageserver.r.source.files", NULL)
+            )
+        )
+    source_files <-
+        unique(normalizePath(Sys.glob(source_file_globs)))
+    excluded_source_file_globs <-
+        file.path(
+            rootPath,
+            getOption("languageserver.excluded.source.files", NULL)
+        )
+    excluded_source_files <-
+        unique(normalizePath(Sys.glob(excluded_source_file_globs)))
+    source_files_to_load <-
+        setdiff(source_files, excluded_source_files)
+}
+
+is_project_source_file <- function(rootPath, source_file_path) {
+  source_file_path %in% project_source_files(rootPath)
+}
+
 #' read a character from stdin
 #'
 #' @keywords internal
