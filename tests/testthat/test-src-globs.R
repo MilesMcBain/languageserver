@@ -1,12 +1,14 @@
 test_that("configurable source globs works", {
   skip_on_cran()
 
-  test_project_dir <- tempdir()
+  test_project_dir <- file.path(tempdir(), "test_project")
   create_source_dir(test_project_dir, "R")
   create_source_dir(test_project_dir, "parse")
   create_source_dir(test_project_dir, "no-parse")
 
   client <- language_client(working_dir = test_project_dir)
+
+  unlink(test_project_dir, recursive = TRUE)
 })
 
 create_source_file <- function(path, name = "test") {
